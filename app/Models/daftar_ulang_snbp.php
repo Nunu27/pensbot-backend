@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class daftar_ulang_snbp extends Model
 {
     use HasFactory;
-    protected $table = "daftar_ulang_snbp";
+    protected $table = "_daftar_ulang__snbp";
     public $timestamps = false;
     protected $fillable = [
         'keterangan',

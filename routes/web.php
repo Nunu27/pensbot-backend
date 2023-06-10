@@ -16,6 +16,7 @@ use App\Http\Controllers\CrawlController;
 */
 
 Route::get('/', [CrawlController::class, 'index']);
-Route::get('/snbp', [CrawlController::class, 'snbp']);
+Route::get('/snbp', [CrawlController::class, 'scrapSNBP']);
+Route::get('/simandiri', [CrawlController::class, 'scrapSimandiri']);
+Route::get('/snbt', [CrawlController::class, 'scrapSNBT']);
 Route::post('/webhook', 'WebhookController@handleRequest');
-
