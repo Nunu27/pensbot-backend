@@ -350,7 +350,7 @@ class CrawlController extends Controller
                 $status_scrap = preg_replace('/^\s+|\s+$|\n/', '', $elements->nodeValue);
                 $schedules[] = $status_scrap;
             }
-
+            
             foreach ($schedules as $key => $item) {
                 $start_date = null;
                 $end_date = null;
@@ -360,31 +360,37 @@ class CrawlController extends Controller
                 $item = explode('–', $item);
                 if (count($item) > 1) {
                     // ambil tahun dari $item[1]
-                    $dateStart = explode(' ', $item[0]);
-                    $dateEnd = explode(' ', $item[1]);
-                    // dd($dateStart);
-                    if (count($dateStart) < 4) {
+                    $dateStart = explode(' ', trim($item[0]));
+                    $dateEnd = explode(' ', trim($item[1]));
+                 
+                    if (count($dateStart) < 4 && count($dateStart) > 1) {
                         // dd($item);
 
                         // dd($dateStart);
-
                         if ($dateStart[1] != "") {
+                           
                             $month = $this->month(strtolower($dateStart[1]));
                         }
 
                         // dd($month, count($dateStart));
                         if (count($dateStart) < 3) {
-                            $start_date = trim($item[0]) . ' ' .  trim($dateEnd[2])  . ' ' . trim($dateEnd[3]);
+                            
+                            $start_date = trim($dateStart[0]) . ' ' .  trim($dateEnd[1])  . ' ' . trim($dateEnd[2]);
+                            // dd($start_date, $dateEnd);
                         } else {
                             $start_date = trim($dateStart[0]) . ' ' . $month . ' ' . trim($dateEnd[3]);
+                            
                         }
                     } else {
-                        $start_date = $item[0];
+                        // dd($dateStart);
+                        $month = $this->month(strtolower($dateEnd[1]));
+                        $start_date = trim($dateStart[0]) . ' ' . $month . ' ' . trim($dateEnd[2]);
+                        // $start_date = $item[0];
                     }
 
-                    // dd($item[1]);
+                    // dd($dateEnd[1]);
                     $monthEnd = $this->month(strtolower($dateEnd[1]));
-                    $end_date = $dateEnd[0] . ' ' . $monthEnd . ' ' . $dateEnd[3];
+                    $end_date = $dateEnd[0] . ' ' . $monthEnd . ' ' . $dateEnd[2];
                 } else {
                     $start_date = trim($item[0]);
                     $end_date = null;
