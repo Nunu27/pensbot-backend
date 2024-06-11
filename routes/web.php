@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\Scrapers\PrestasiScraper;
+use App\Http\Controllers\Scrapers\PMBScraper;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CrawlController;
 
 
 /*
@@ -15,7 +16,19 @@ use App\Http\Controllers\CrawlController;
 |
 */
 
-Route::get('/', [CrawlController::class, 'index']);
-Route::get('/snbp', [CrawlController::class, 'scrapSNBP']);
-Route::get('/simandiri', [CrawlController::class, 'scrapSimandiri']);
-Route::get('/snbt', [CrawlController::class, 'scrapSNBT']);
+Route::get('/', function () {
+    return response()->json([
+        'success' => true,
+        'message' => "PENSBot Server"
+    ]);
+});
+
+// 1c
+Route::get('/prestasi', [PrestasiScraper::class, 'prestasi']);
+
+// 3b
+
+// 3c
+Route::get('/snbp', [PMBScraper::class, 'snbp']);
+Route::get('/simandiri', [PMBScraper::class, 'simandiri']);
+Route::get('/snbt', [PMBScraper::class, 'snbt']);

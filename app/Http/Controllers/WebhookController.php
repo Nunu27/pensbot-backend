@@ -1,28 +1,34 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\CrawlData;
+use App\Http\Controllers\Handlers\InformasiPendaftaranHandler;
+use App\Http\Controllers\Handlers\PrestasiHandler;
+use App\Http\Controllers\Handlers\TimelinePendaftaranHandler;
 use Illuminate\Http\Request;
 
 class WebhookController extends Controller
 {
-    private function getData($id)
-    {
+    protected $prestasiHandler;
+    protected $informasiPendaftaranHandler;
+    protected $timelinePendaftaranHandler;
 
-        $item = CrawlData::find($id);
-        return json_decode($item->data);
+    public function __construct()
+    {
+        $this->prestasiHandler = new PrestasiHandler();
+        $this->informasiPendaftaranHandler = new InformasiPendaftaranHandler();
+        $this->timelinePendaftaranHandler = new TimelinePendaftaranHandler();
     }
 
     public function handleWebhook(Request $request)
     {
-        $data = $request->json()->all();
+        $payload = $request->json()->all();
 
         return response()->json([
             "fulfillmentMessages" => [
                 [
                     "payload" => [
                         "telegram" => [
-                            "text" => $this->processRequest($data),
+                            "text" => $this->processRequest($payload),
                             "parse_mode" => "Markdown"
                         ]
                     ]
@@ -31,44 +37,42 @@ class WebhookController extends Controller
         ]);
     }
 
-    private function processRequest($data)
+    public function getHandler($intent)
     {
-        $intent = $data['queryResult']['intent']['displayName'];
+
+        return match ($intent) {
+            '1c.Prestasi' => [$this->prestasiHandler, 'prestasi'],
+
+            '3b1.KuotaPendaftaran' => [$this->informasiPendaftaranHandler, 'kuotaPendaftaran'],
+            '3b2.CaraDaftarUlang' => [$this->informasiPendaftaranHandler, 'daftarUlang'],
+            '3b3.DaftarSNBP' => [$this->informasiPendaftaranHandler, 'SNBP'],
+            '3b4.DaftarSNBT' => [$this->informasiPendaftaranHandler, 'SNBT'],
+            '3b5.DaftarMandiri' => [$this->informasiPendaftaranHandler, 'SIMANDIRI'],
+
+            '3c1.TimelinePerkuliahan' => [$this->timelinePendaftaranHandler, 'perkuliahan'],
+            '3c2.TimelineSNBP' => [$this->timelinePendaftaranHandler, 'SNBP'],
+            '3c3.TimelineSIMANDIRI' => [$this->timelinePendaftaranHandler, 'SIMANDIRI'],
+            '3c4.TimelineSNBT' => [$this->timelinePendaftaranHandler, 'SNBT'],
+
+            default => null,
+        };
+    }
+
+    private function processRequest($payload)
+    {
+        $handler = $this->getHandler($payload['queryResult']['intent']['displayName']);
+
+        if (!$handler) {
+            return '
+Maaf penseepisbot tidak mengerti apa yang kamu maksud😥
+Untuk informasi lebih lanjut silahkan hubungi nomor berikut wa.me/6281133305005 atau kembali ke halaman utama dengan mengetik /start';
+        }
 
         try {
-            return match ($intent) {
-                '3c2.TimelineSNBP' => $this->handleSNBP($data),
-                '3c3.TimelineSIMANDIRI' => $this->handleSimandiri($data),
-                '3c4.TimelineSNBT' => $this->handleSNBT($data),
-                default => 'Maaf penseepisbot tidak mengerti apa yang kamu maksud😥\nUntuk informasi lebih lanjut silahkan hubungi nomor berikut wa.me/6281133305005 atau kembali ke halaman utama dengan mengetik /start',
-            };
+            return call_user_func($handler, $payload) . "\nApakah jawaban penseepisbot sudah cukup membantu?";
         } catch (\Throwable $th) {
+            error_log(($th));
             return 'Terjadi kesalahan saat memroses permintaan';
         }
     }
-
-
-    private function handleSNBP($data)
-    {
-        $data = $this->getData('timeline_snbp');
-        $stringDB = "Berikut jadwal pendaftaran SNBP : \n";
-
-        foreach ($data as $item) {
-            $stringDB .= '*' . $item->keterangan . '* | ' . $item->tanggal . "\n";
-        }
-
-        return $stringDB . "\n\nApakah jawaban PENSbot sudah cukup membantu?";
-    }
-    private function handleSimandiri($data)
-    {
-        $data = $this->getData('timeline_simandiri');
-        $stringDB = "Berikut jadwal pendaftaran SIMANDIRI : \n";
-
-        foreach ($data as $item) {
-            $stringDB .= '*' . $item->keterangan . '* | ' . $item->tanggal . "\n";
-        }
-
-        return $stringDB . "\n\nApakah jawaban PENSbot sudah cukup membantu?";
-    }
-
 }
